@@ -427,15 +427,62 @@
   </footer>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
+  // --- 1) Keep your age-auto-update logic (relative to 2025 baseline) ---
   const currentYear = new Date().getFullYear();
   document.querySelectorAll('p').forEach(p => {
-    p.innerHTML = p.innerHTML.replace(/\((\d{1,3})\)/g, function(match, originalAge) {
+    p.innerHTML = p.innerHTML.replace(/\((\d{1,3})\)/g, function (match, originalAge) {
       const birthYear = 2025 - parseInt(originalAge);
       const newAge = currentYear - birthYear;
       return `(${newAge})`;
     });
   });
+
+  // --- 2) Dynamic "today" highlight (Asia/Karachi) ---
+  const tz = 'Asia/Karachi';
+  const parts = new Intl.DateTimeFormat('en-US', { timeZone: tz, month: 'short', day: 'numeric' })
+                  .formatToParts(new Date());
+  const monthShort = parts.find(p => p.type === 'month').value; // e.g., "Aug"
+  const today = parseInt(parts.find(p => p.type === 'day').value, 10);
+
+  // Remove any previous highlight class from all month cards
+  document.querySelectorAll('article[id]').forEach(a => a.classList.remove('ring-blue-500/50'));
+
+  // Highlight today's month card (if present)
+  const monthArticle = document.getElementById(monthShort);
+  if (monthArticle) {
+    monthArticle.classList.add('ring-blue-500/50');
+
+    // Also highlight the month tab in the navbar
+    const monthLink = document.querySelector(`nav a[href="#${monthShort}"]`);
+    if (monthLink) {
+      monthLink.classList.add('bg-blue-50','dark:bg-blue-900/30','text-blue-700','dark:text-blue-300');
+    }
+
+    // Scan events in this month and highlight any that match today's date
+    const items = monthArticle.querySelectorAll('li');
+    let foundAny = false;
+    items.forEach(li => {
+      const badge = li.querySelector('span');
+      if (!badge) return;
+      const dayVal = parseInt(badge.textContent.trim(), 10); // handles "8" or "08"
+      // Clear any previous dynamic highlight on badges (safe to call even if absent)
+      badge.classList.remove('bg-blue-600','text-white','dark:bg-blue-400','dark:text-neutral-900');
+      li.classList.remove('border-blue-300','dark:border-blue-700');
+
+      if (dayVal === today) {
+        foundAny = true;
+        // Emphasize the day badge + its row border
+        badge.classList.add('bg-blue-600','text-white','dark:bg-blue-400','dark:text-neutral-900');
+        li.classList.add('border-blue-300','dark:border-blue-700');
+      }
+    });
+
+    // Optional: auto-scroll to the month if today is inside it
+    if (foundAny) {
+      monthArticle.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
 });
 </script>
 
